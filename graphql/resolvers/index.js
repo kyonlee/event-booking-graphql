@@ -1,187 +1,185 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const bookingResolver = require('./booking');
+const eventResolver = require('./event');
+const userResolver = require('./user');
 
-const Event = mongoose.model('events');
-const User = mongoose.model('users');
-const Booking = mongoose.model('bookings');
-
-const user = async userId => {
-	try {
-		const user = await User.findById(userId);
-		return {
-			...user._doc,
-			_id: user.id,
-			password: null,
-			createdEvents: events.bind(this, user._doc.createdEvents)
-		};
-	} catch (err) {
-		throw err;
-	}
+const rootResolvers = {
+	...bookingResolver,
+	...eventResolver,
+	...userResolver
 };
 
-const event = async eventId => {
-	try {
-		const event = await Event.findById(eventId);
-		return {
-			...event._doc,
-			_id: event.id,
-			date: new Date(event._doc.date).toISOString(),
-			author: user.bind(this, event._doc.author)
-		};
-	} catch (err) {
-		throw err;
-	}
-};
+module.exports = rootResolvers;
 
-const events = async eventIds => {
-	try {
-		const events = await Event.find({ _id: { $in: eventIds } });
+// const mongoose = require('mongoose');
+// const bcrypt = require('bcryptjs');
 
-		return events.map(event => {
-			return {
-				...event._doc,
-				_id: event.id,
-				date: new Date(event._doc.date).toISOString(),
-				author: user.bind(this, event._doc.author)
-			};
-		});
-	} catch (err) {
-		throw err;
-	}
-};
+// const Event = mongoose.model('events');
+// const User = mongoose.model('users');
+// const Booking = mongoose.model('bookings');
+// const { dateToString } = require('../../helpers/date');
 
-module.exports = {
-	events: async () => {
-		try {
-			const events = await Event.find();
+// const parseEvent = event => {
+// 	return {
+// 		...event._doc,
+// 		_id: event.id,
+// 		date: dateToString(event._doc.date),
+// 		author: user.bind(this, event._doc.author)
+// 	};
+// };
 
-			return events.map(event => {
-				return {
-					...event._doc,
-					_id: event.id,
-					date: new Date(event._doc.date).toISOString(),
-					author: user.bind(this, event._doc.author)
-				};
-			});
-		} catch (err) {
-			throw err;
-		}
-	},
-	// need to user and event functions to booking resolver
-	bookings: async () => {
-		try {
-			const bookings = await Booking.find();
+// const parseBooking = booking => {
+// 	return {
+// 		...booking._doc,
+// 		_id: booking.id,
+// 		user: user.bind(this, booking._doc.user),
+// 		event: event.bind(this, booking._doc.event),
+// 		createdAt: dateToString(booking._doc.createdAt),
+// 		updatedAt: dateToString(booking._doc.updatedAt)
+// 	};
+// };
 
-			return bookings.map(booking => {
-				return {
-					...booking._doc,
-					_id: booking.id,
-					createdAt: new Date(booking._doc.createdAt).toISOString(),
-					updatedAt: new Date(booking._doc.updatedAt).toISOString()
-				};
-			});
-		} catch (err) {
-			throw err;
-		}
-	},
-	createEvent: async args => {
-		const newEvent = new Event({
-			title: args.eventInput.title,
-			description: args.eventInput.description,
-			price: +args.eventInput.price,
-			date: new Date(args.eventInput.date),
-			author: '5d132796955d0487929f505c'
-		});
+// const parseUser = user => {
+// 	return {
+// 		...user._doc,
+// 		_id: user.id,
+// 		password: null,
+// 		createdEvents: events.bind(this, user._doc.createdEvents)
+// 	};
+// };
 
-		try {
-			const result = await newEvent.save();
+// const user = async userId => {
+// 	try {
+// 		const user = await User.findById(userId);
+// 		return parseUser(user);
+// 	} catch (err) {
+// 		throw err;
+// 	}
+// };
 
-			const author = await User.findById('5d132796955d0487929f505c');
+// const event = async eventId => {
+// 	try {
+// 		const event = await Event.findById(eventId);
+// 		return parseEvent(event);
+// 	} catch (err) {
+// 		throw err;
+// 	}
+// };
 
-			if (!author) {
-				throw new Error('User not found');
-			}
+// const events = async eventIds => {
+// 	try {
+// 		const events = await Event.find({ _id: { $in: eventIds } });
 
-			author.createdEvents.push(result);
-			await author.save();
+// 		return events.map(event => {
+// 			return parseEvent(event);
+// 		});
+// 	} catch (err) {
+// 		throw err;
+// 	}
+// };
 
-			return {
-				...result._doc,
-				_id: result.id,
-				date: new Date(result._doc.date).toISOString(),
-				author: user.bind(this, result._doc.author)
-			};
-		} catch (err) {
-			throw err;
-		}
-	},
-	createUser: async args => {
-		try {
-			const author = await User.findOne({
-				email: args.userInput.email
-			});
-			if (author) {
-				throw new Error('User exists already');
-			}
+// module.exports = {
+// 	events: async () => {
+// 		try {
+// 			const events = await Event.find();
 
-			const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
+// 			return events.map(event => {
+// 				return parseEvent(event);
+// 			});
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	},
+// 	bookings: async () => {
+// 		try {
+// 			const bookings = await Booking.find();
 
-			const newUser = new User({
-				email: args.userInput.email,
-				password: hashedPassword
-			});
+// 			return bookings.map(booking => {
+// 				return parseBooking(booking);
+// 			});
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	},
+// 	createEvent: async args => {
+// 		const newEvent = new Event({
+// 			title: args.eventInput.title,
+// 			description: args.eventInput.description,
+// 			price: +args.eventInput.price,
+// 			date: new Date(args.eventInput.date),
+// 			author: '5d132796955d0487929f505c'
+// 		});
 
-			const result = await newUser.save();
+// 		try {
+// 			const author = await User.findById('5d132796955d0487929f505c');
 
-			return { ...result._doc, _id: result.id, password: null };
-		} catch (err) {
-			throw err;
-		}
-	},
-	bookEvent: async args => {
-		const newBooking = new Booking({
-			user: '5d132796955d0487929f505c',
-			event: args.eventId
-		});
+// 			if (!author) {
+// 				throw new Error('User not found');
+// 			}
 
-		try {
-			const result = await newBooking.save();
+// 			const result = await newEvent.save();
 
-			return {
-				...result._doc,
-				_id: result.id,
-				event: event.bind(this, result._doc.event),
-				user: user.bind(this, result._doc.user),
-				createdAt: new Date(result._doc.createdAt).toISOString(),
-				updatedAt: new Date(result._doc.updatedAt).toISOString()
-			};
-		} catch (err) {
-			throw err;
-		}
-	},
-	cancelBooking: async args => {
-		try {
-			const result = await Booking.findByIdAndDelete(args.bookingId).populate(
-				'event'
-			);
+// 			author.createdEvents.push(result);
+// 			await author.save();
 
-			// need to populate('event') if using this method
+// 			return parseEvent(result);
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	},
+// 	createUser: async args => {
+// 		try {
+// 			const author = await User.findOne({
+// 				email: args.userInput.email
+// 			});
+// 			if (author) {
+// 				throw new Error('User exists already');
+// 			}
 
-			const event = {
-				...result.event._doc,
-				_id: result.event.id,
-				author: user.bind(this, result.event._doc.author),
-				date: new Date(result.event._doc.date).toISOString()
-			};
+// 			const hashedPassword = await bcrypt.hash(args.userInput.password, 12);
 
-			console.log(event);
+// 			const newUser = new User({
+// 				email: args.userInput.email,
+// 				password: hashedPassword
+// 			});
 
-			// remove populate('event') if using this method
-			// const bookingEvent = await event.bind(this, result._doc.event)();
+// 			const result = await newUser.save();
 
-			return event;
-		} catch (err) {
-			throw err;
-		}
-	}
-};
+// 			return parseUser(result);
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	},
+// 	bookEvent: async args => {
+// 		const newBooking = new Booking({
+// 			user: '5d132796955d0487929f505c',
+// 			event: args.eventId
+// 		});
+
+// 		try {
+// 			const result = await newBooking.save();
+
+// 			return parseBooking(result);
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	},
+// 	cancelBooking: async args => {
+// 		try {
+// 			// this is where you .populate('event')
+// 			const result = await Booking.findByIdAndDelete(args.bookingId).populate(
+// 				'event'
+// 			);
+
+// 			// need to populate('event') if using this method
+
+// 			const event = parseEvent(result.event);
+
+// 			// remove populate('event') if using this method
+// 			// const bookingEvent = await event.bind(this, result._doc.event)();
+
+// 			return event;
+// 		} catch (err) {
+// 			throw err;
+// 		}
+// 	}
+// };
