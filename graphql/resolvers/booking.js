@@ -4,9 +4,13 @@ const Booking = mongoose.model('bookings');
 const { parseBooking, parseEvent } = require('./helpers');
 
 module.exports = {
-	bookings: async () => {
+	bookings: async (args, req) => {
+		if (!req.isAuth) {
+			throw new Error('Unauthorized');
+		}
+
 		try {
-			const bookings = await Booking.find();
+			const bookings = await Booking.find({ user: req.userId });
 
 			return bookings.map(booking => {
 				return parseBooking(booking);
@@ -15,10 +19,14 @@ module.exports = {
 			throw err;
 		}
 	},
-	bookEvent: async args => {
+	bookEvent: async ({ eventId }, req) => {
+		if (!req.isAuth) {
+			throw new Error('Unauthorized');
+		}
+
 		const newBooking = new Booking({
-			user: '5d132796955d0487929f505c',
-			event: args.eventId
+			user: req.userId,
+			event: eventId
 		});
 
 		try {
@@ -29,15 +37,18 @@ module.exports = {
 			throw err;
 		}
 	},
-	cancelBooking: async args => {
+	cancelBooking: async ({ bookingId }, req) => {
+		if (!req.isAuth) {
+			throw new Error('Unauthorized');
+		}
+
 		try {
 			// this is where you .populate('event')
-			const result = await Booking.findByIdAndDelete(args.bookingId).populate(
+			const result = await Booking.findByIdAndDelete(bookingId).populate(
 				'event'
 			);
 
 			// need to populate('event') if using this method
-
 			const event = parseEvent(result.event);
 
 			// remove populate('event') if using this method

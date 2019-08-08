@@ -16,17 +16,21 @@ module.exports = {
 			throw err;
 		}
 	},
-	createEvent: async args => {
+	createEvent: async ({ eventInput }, req) => {
+		if (!req.isAuth) {
+			throw new Error('Unauthorized');
+		}
+
 		const newEvent = new Event({
-			title: args.eventInput.title,
-			description: args.eventInput.description,
-			price: +args.eventInput.price,
-			date: new Date(args.eventInput.date),
-			author: '5d132796955d0487929f505c'
+			title: eventInput.title,
+			description: eventInput.description,
+			price: +eventInput.price,
+			date: new Date(eventInput.date),
+			author: req.userId
 		});
 
 		try {
-			const author = await User.findById('5d132796955d0487929f505c');
+			const author = await User.findById(req.userId);
 
 			if (!author) {
 				throw new Error('User not found');

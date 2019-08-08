@@ -10,10 +10,13 @@ require('./models/Booking');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolvers = require('./graphql/resolvers');
+const requireLogin = require('./middlewares/requireLogin');
 
 const app = express();
 
 app.use(bodyParser.json());
+
+app.use(requireLogin);
 
 app.use(
 	'/graphql',
